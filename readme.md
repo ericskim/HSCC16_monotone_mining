@@ -16,6 +16,11 @@ The code used to generate the figures for the paper _Directed Specifications and
 - Install the [z3 theorem prover](https://github.com/Z3Prover/z3/wiki) with python API by running `conda install -c https://conda.anaconda.org/asmeurer z3`
   If z3 still does not install you can try calling `pip install angr-z3`
 
+**Run Instructions**
+The best way to run the examples is by executing the two ipython notebooks, `freeway_example.ipynb` and `integrator_example.ipynb`. You can also view the results of executing the [freeway_example](http://nbviewer.jupyter.org/url/www.eecs.berkeley.edu/~eskim/jupyter_notebooks/freeway_example.ipynb#) notebook and [integrator](http://nbviewer.jupyter.org/url/www.eecs.berkeley.edu/~eskim/jupyter_notebooks/integrator_example.ipynb#) example notebook without running them.
+
+After following all of the installation instructions above, run `ipython notebook` in this directory.
+
 ##TODO
 - [ ] Clean up code in and provide additional documentation for `AGmining`, `trafficCTM`, and `stl` packages
 - [ ] Write unit tests

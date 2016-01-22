@@ -104,7 +104,8 @@ class assumption_miner(object):
                     max_num_points = None, transform_u = None, \
                     guarantee = None, binary_search = False,
                     init_state = None,
-                    disturb_over_init_state = 1.0): 
+                    disturb_over_init_state = 1.0,
+                    verbose = True): 
 
         self.T = T
         self.lower_points = np.array([]).reshape((0,T,system.input_dim))
@@ -127,6 +128,7 @@ class assumption_miner(object):
         self.transform_u = transform_u
         self.mine_init_states = mine_init_states
         self.binary_search = binary_search
+        self.verbose = verbose
 
         if (guarantee is not None) and (hasattr(system,'output_map') is False):
             raise ValueError("Cannot impose guarantee without output_map method")
@@ -187,7 +189,8 @@ class assumption_miner(object):
 
         self.z3_epsilon = z3.Real('z3_epsilon')
         self.z3_epsilon_state = z3.Real('z3_epsilon_state')
-        self.disturb_over_init_state = disturb_over_init_state        self.impose_upper_bound(self.U, self.system.input_order)
+        self.disturb_over_init_state = disturb_over_init_state        
+        self.impose_upper_bound(self.U, self.system.input_order)
         self.impose_lower_bound(self.U, self.system.input_order)
 
         # Keep track of when epsilon is updated
@@ -468,11 +471,8 @@ class assumption_miner(object):
             num_lower = self.lower_points.shape[0]
             num_upper = self.upper_points.shape[0]
             total_points = num_lower + num_upper
-            if total_points % 500 == 0:
+            if self.verbose and (total_points % 500 == 0):
                 print "Points: ", total_points, ", epsilon: ", self.epsilon
-
-            if total_points % 1000 == 0:
-                pass 
             
             if (self.max_num_points is not None) and (total_points >= self.max_num_points):
                 # TODO: Prune points that are dominated and double check

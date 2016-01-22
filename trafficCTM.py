@@ -1,10 +1,17 @@
-import numpy as np 
-import z3
+"""
+Cell Transmission Model Traffic Example Class 
+
+"""
+
 import types
+import numpy as np 
+
+import z3
+
 
 class actm(object):
     def __init__(self):
-        #self.x0 = x0
+
         self.state_dim = 5
         self.input_dim = 2
         self.output_dim = 1
@@ -19,6 +26,14 @@ class actm(object):
         self.ramp_saturation = .3
 
     def simulate(self, u, x0):
+        """
+        Simulate CTM Network dynamics
+
+        Args:
+            u (2D numpy array): Input signal with array dimensions (signal length, signal dimension)
+            x0 (numpy array): Initial state of network. Must be horizontal 1D array. 
+        """
+
         T = u.shape[0]
         x = np.zeros([T+1, self.state_dim])
         x[0] = x0
@@ -52,7 +67,7 @@ class actm(object):
 
     def congestion_free(self, x):
         """
-        Check if state signal x doesn't exhibit congestion
+        Check if state signal x doesn't exhibit congestion for all time
         """
 
         T = x.shape[0]
@@ -73,7 +88,7 @@ class actm(object):
 
     def congestion_signal(self, x):
         """
-        Return a time signal determining if congestion free exists over time.
+        Return a signal determining if congestion free exists at any given time.
         """
         T = x.shape[0]
         segmax = [1, 1, 1, .5, .5]
@@ -92,115 +107,4 @@ class actm(object):
 
         return congestion_signal 
 
-# class actm(object):
-#     def __init__(self):
-#         """
-#         Gives a set of default parameters. 
-#         """
-#         self.nSegments = 3
-#         self.has_onramp = np.array([1,1,0])
-#         self.has_offramp = [1,0,0]
-#         self.is_metered = [1,1,0]
-#         self.xMax = [11.5, 11.5, 11.5]
-#         self.x0 = [0.0] * self.nSegments
-#         self.gamma = [1.0] * self.nSegments
-#         self.seg_Fbar = [2, 2, 2]
-#         self.freeflow_velocity = [0.7241, 0.7241, 0.7241]
-#         self.beta = np.array([.1, 0,0])
-#         self.beta_bar = 1 - self.beta
 
-#         self.umin = [.2,.2,0];
-#         self.umax = [.5,.5,0];
-      
-#         self.segD = [2, 0, 0];
-#         self.onrampD = [0.6, .6, 0];
-
-#         self.Xi = np.ones(self.nSegments);
-
-#         self.w = .181 * np.ones(self.nSegments);
-
-#         self.L = 8; 
-#         self.ts = 3;
-#         self.control_type = 'alinea'
-
-#     def simulate(self, u, x0):
-
-#         assert(isinstance(u, types.TupleType))
-#         assert(len(u) == 2)
-#         d = u[0]
-#         s = u[1]
-
-#         assert (self.control_type is 'alinea' or self.control_type is 'fixed')
-#         assert (d.shape[0] == s.shape[0]), "Inputs must have same time horizon"# same time horizon for supply/demand
-#         assert (x0.size == self.nSegments * 2), "Initial state has incorrect length"
-#         #assert (d.shape[1] == 1  + num_onramps), "Demand should only be for first segment and onramps"
-#         assert (s.shape[1] == 1), "Supply should only exist for last freeway segment"
-
-#         T = d.shape[0] + 1 
-        
-#         nramps = np.count_nonzero(self.has_onramp)
-#         state_dimension = self.nSegments + nramps
-
-#         x = np.zeros([T, self.nSegments * 2])
-#         x[0] = x0
-#         demand   = np.zeros([T, self.nSegments])
-#         supply   = np.zeros([T, self.nSegments])
-        
-#         segflow  = np.zeros([T, self.nSegments])
-#         onrampflow = np.zeros([T, self.nSegments])
-#         offrampflow = np.zeros([T, self.nSegments])
-
-#         for t in range(T):
-#             for seg in range(self.nSegments):
-
-#                 x_ramp = seg + self.nSegments # this convention is confusing
-
-#                 demand[t,seg] = min([x[t,seg], self.seg_Fbar[seg]])
-#                 supply[t,seg] = self.xMax[seg] - x[t,seg]
-
-#                 if has_onramp[seg]:
-#                     ramp_demand = x[t, x_ramp] + d[t,x_ramp]
-#                     onrampflow[t, seg] = min(ramp_demand, self.Xi[seg] * supply[t,seg])
-#                 else:
-#                     pass
-
-#                 if has_offramp[seg]:
-#                     pass
-
-#                 if (seg == self.nSegments - 1): # No downstream segment exists
-#                     pass
-#                 else: # Downstream segment exists
-#                     pass
-
-
-#                 if (seg == 0):
-#                     pass
-#                     # x[t + 1, seg] = 
-#                 else:
-#                     pass
-
-#         return x
-
-#     def z3Constraints(self, x, d, s):
-#         """
-#         Parameters:
-
-#         Output:
-#         """
-#         def z3max(assignment, array):
-#             assert (isinstance(array,types.TupleType) or isinstance(array,types.ListType))
-
-#             constraints = [assignment >= array[i] for i in range(len(array))]
-#             equal_to_constraint = z3.Or([assignment == array[i] for i in range(len(array))])
-#             constraints.append(equal_to_constraint)
-            
-#             return constraints
-
-#         def z3min(assignment, array):
-#             assert (isinstance(array,types.TupleType) or isinstance(array,types.ListType))
-
-#             constraints = [assignment <= array[i] for i in range(len(array))]
-#             equal_to_constraint = z3.Or([assignment == array[i] for i in range(len(array))])
-#             constraints.append(equal_to_constraint)
-
-#             return constraints
