@@ -5,13 +5,17 @@ import pdb
 import types
 import warnings
 
-import z3
 import numpy as np
+
+import z3
 
 def not_in_rectangle(z3_x, point, rect_direction, epsilon = 0, order = None):
     """
     Create a z3 disjunction constraint from a point with bloating epsilon.
 
+    Args:
+        z3_x (list of z3 variable): 
+        point (1D numpy array): 
     """
     ndim = len(point)
     rect_disjunction = [None] * ndim
@@ -25,15 +29,10 @@ def not_in_rectangle(z3_x, point, rect_direction, epsilon = 0, order = None):
     if rect_direction is 'lower':
         for dim in range(ndim):
             o = order[dim] 
-            # rect_disjunction[dim] = (o*z3_x[dim] >= o*(point[dim] + o*epsilon)) # original
-            # rect_disjunction[dim] = (0.0 >= o*(point[dim] + o*epsilon - o*z3_x[dim])) # worst
-            # rect_disjunction[dim] = (o*z3_x[dim] - o*point[dim] >=  epsilon)       
-            # rect_disjunction[dim] = (0 >= -1*o*z3_x[dim] + o*point[dim] + epsilon)   
             rect_disjunction[dim] = (o*z3_x[dim] >= o*point[dim] + epsilon) # best
     elif rect_direction is 'upper':
         for dim in range(ndim):
             o = order[dim]
-            #rect_disjunction[dim] = (o*z3_x[dim] <= o*(point[dim] - o*epsilon)) # original
             rect_disjunction[dim] = (o*z3_x[dim] <= o*point[dim] - epsilon)     
     else:
         raise ValueError("rect_direction must be 'lower' or 'upper' ")
@@ -66,14 +65,38 @@ def in_rectangle(z3_x, point, rect_direction, epsilon = 0, order = None):
     return z3.And(rect_conjunction)
 
 def z3_to_float(x):
+    """
+    Converts z3 variable to a floating point variable
+    """
     return float(x.numerator_as_long())/float(x.denominator_as_long())
 
 class assumption_miner(object):
-    # def __init__(self, f, checkspec, ndim, epsilon, epsilon_final,\
-    #                 lower_bound, upper_bound,\
-    #                 order = None, learningrate = .8,\
-    #                 max_num_points = None, transform_u = None,
-    #                 eval_order = None):
+    """
+    Assumption Miner Class. 
+
+    Given a specification, determines the 
+
+    Args:
+        system: System class that is used to generate simulated trajectories
+        T (int): Disturbance signal length
+        epsilon: Initial epsilon parameter that determines grid granularity
+        epsilon_final: Desired termination epsilon parameter
+        lower_bound (numpy array): Lower bounds on the input signal
+        upper_bound (numpy array): Upper bounds on the input signal
+        checkspec (function): Evaluates whether state trajectory meets a specification
+        mine_init_states (bool): If true, will consider initial states as part of assumption space
+                                 If false, will only consider disturbance signals
+
+    Optional Args:
+        learningrate (double): alpha in paper. Determines change in grid granularity
+        max_num_points (int): Miner will terminate after this number of samples
+        binary_search (bool): If true, will perform a binary search over the set of epsilons so that
+                              the search grid is not unnecessarily fine. A finer grid requires more
+                              samples. 
+        disturb_over_init_state (double): Used to provide a ratio between bloating in the initial
+                                          state direction and the disturbance signal directions
+
+    """
     def __init__(self, system, T, epsilon, epsilon_final,\
                     lower_bound, upper_bound, checkspec,
                     mine_init_states,\
@@ -81,7 +104,7 @@ class assumption_miner(object):
                     max_num_points = None, transform_u = None, \
                     guarantee = None, binary_search = False,
                     init_state = None,
-                    disturb_over_init_state = 1.0):
+                    disturb_over_init_state = 1.0): 
 
         self.T = T
         self.lower_points = np.array([]).reshape((0,T,system.input_dim))
@@ -164,9 +187,7 @@ class assumption_miner(object):
 
         self.z3_epsilon = z3.Real('z3_epsilon')
         self.z3_epsilon_state = z3.Real('z3_epsilon_state')
-        self.disturb_over_init_state = disturb_over_init_state
-
-        self.impose_upper_bound(self.U, self.system.input_order)
+        self.disturb_over_init_state = disturb_over_init_state        self.impose_upper_bound(self.U, self.system.input_order)
         self.impose_lower_bound(self.U, self.system.input_order)
 
         # Keep track of when epsilon is updated
@@ -375,6 +396,7 @@ class assumption_miner(object):
 
     def clean_constraints(self):
         """ 
+        Checks for redundant sample points and gets rid of them if found
         """
         self.solver.reset()
 
@@ -429,7 +451,6 @@ class assumption_miner(object):
         self.solver.push()
         self.solver.add(self.z3_epsilon == self.epsilon * self.disturb_over_init_state)
         self.solver.add(self.z3_epsilon_state == self.epsilon)
-        satisfied = self.solver.check()
         self.solver.pop()
 
         return (satisfied == z3.sat)
@@ -437,7 +458,7 @@ class assumption_miner(object):
     def mine(self):
         """
         Mines assumption points until epsilon reaches epsilon_final
-        Stores in lower_points and upper_points 
+        Stores the sampled points in lower_points, upper_points
         """
         input_order = self.system.input_order
         state_order = self.system.state_order
@@ -460,7 +481,6 @@ class assumption_miner(object):
             self.solver.push()
             self.solver.add(self.z3_epsilon == self.epsilon * self.disturb_over_init_state) # Input constraint 
             self.solver.add(self.z3_epsilon_state == self.epsilon) # State constraint 
-            #pdb.set_trace()
             satisfied = self.solver.check()
             self.solver.pop()
 

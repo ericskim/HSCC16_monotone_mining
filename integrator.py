@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+This module provides an integator class that 
+
+"""
+
 import numpy as np 
 import z3
 import types
@@ -5,6 +11,14 @@ import types
 
 class integrator(object):
     def __init__ (self, a, x0 = None):
+        """
+        Initialize discrete integrator x[k+1] = max(0, a*x[k] + d[k])
+
+        Args: 
+            a (double): integrator decay
+            x0 (double, optional): Initial state of integrator
+        """
+
         if a < 0:
             raise ValueError('a must be nonnegative')
         self.a = a
@@ -17,7 +31,13 @@ class integrator(object):
         self.output_order = np.ones([self.output_dim])
 
     def simulate(self, u, x0):
-        
+        """
+        Simulate integrator dynamics
+
+        Args:
+            u (1D numpy array): Input signal. The length of the array is the signal length 
+            x0 (double): Initial state of integrator
+        """
         x = np.zeros([len(u)+1, 1])
         x[0] = x0
 
@@ -30,7 +50,7 @@ class integrator(object):
         """
         Takes state trajectories and applies an output function 
         """
-        #raise NotImplementedError(" ")
+
         return x
         
 
